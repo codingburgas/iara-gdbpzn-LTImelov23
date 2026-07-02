@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Отсъствия - ГДПБЗН{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-calendar-times"></i> Отсъствия</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if absences %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Служител</th>
+                    <th>Тип</th>
+                    <th>От</th>
+                    <th>До</th>
+                    <th>Причина</th>
+                    <th>Статус</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in absences %}
+                <tr>
+                    <td><a href="{{ url_for('employee_detail', id=a.employee_id) }}">{{ a.employee.full_name }}</a></td>
+                    <td><span class="absence-type type-{{ a.absence_type }}">{{ a.absence_type|replace('_', ' ')|title }}</span></td>
+                    <td>{{ a.start_date.strftime('%d.%m.%Y') }}</td>
+                    <td>{{ a.end_date.strftime('%d.%m.%Y') }}</td>
+                    <td>{{ a.reason or '—' }}</td>
+                    <td><span class="status-badge status-{{ a.status }}">{{ a.status|title }}</span></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">Няма текущи отсъствия.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}{{ employee.full_name }} - ГДПБЗН{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-user"></i> {{ employee.full_name }}</h1>
+    <div class="header-actions">
+        {% if current_user.role == 'admin' %}
+        <a href="{{ url_for('employee_edit', id=employee.id) }}" class="btn btn-warning">
+            <i class="fas fa-edit"></i> Редактирай
+        </a>
+        <a href="{{ url_for('employee_absence', id=employee.id) }}" class="btn btn-secondary">
+            <i class="fas fa-calendar-times"></i> Отсъствие
+        </a>
+        {% endif %}
+        <a href="{{ url_for('employee_list') }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Назад
+        </a>
+    </div>
+</div>
+<div class="row">
+    <div class="col-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <div class="emp-photo-lg">
+                    {% if employee.photo %}
+                    <img src="{{ url_for('static', filename='uploads/' + employee.photo) }}" alt="{{ employee.full_name }}">
+                    {% else %}
+                    <div class="emp-avatar-lg">{{ employee.first_name[0] }}{{ employee.last_name[0] }}</div>
+                    {% endif %}
+                </div>
+                <h2>{{ employee.full_name }}</h2>
+                <p class="text-muted">{{ employee.rank.name if employee.rank else '—' }}</p>
+                <p class="emp-status-badge {{ employee.current_status }}">{{ employee.current_status|title }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-8">
+        <div class="card">
+            <div class="card-header"><h2>Информация</h2></div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Име</label>
+                        <span>{{ employee.first_name }} {{ employee.last_name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Ранг</label>
+                        <span>{{ employee.rank.name if employee.rank else '—' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Телефон</label>
+                        <span>{{ employee.phone or '—' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Email</label>
+                        <span>{{ employee.email or '—' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Статус</label>
+                        <span class="emp-status-badge {{ employee.current_status }}">{{ employee.current_status|title }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2><i class="fas fa-users"></i> Екипи</h2></div>
+            <div class="card-body">
+                {% for ta in employee.team_assignments %}
+                {% if ta.is_active %}
+                <div class="assignment-card">
+                    <h3>{{ ta.team.name }}</h3>
+                    <p>Смяна: {{ ta.team.shift|title }}</p>
+                    {% if ta.vehicle %}
+                    <p>Автомобил: {{ ta.vehicle.registration }} ({{ ta.vehicle.model }})</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h2><i class="fas fa-calendar-times"></i> Отсъствия</h2></div>
+            <div class="card-body">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Тип</th>
+                            <th>От</th>
+                            <th>До</th>
+                            <th>Статус</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in employee.absences %}
+                        <tr>
+                            <td>{{ a.absence_type|title }}</td>
+                            <td>{{ a.start_date.strftime('%d.%m.%Y') }}</td>
+                            <td>{{ a.end_date.strftime('%d.%m.%Y') }}</td>
+                            <td><span class="status-badge status-{{ a.status }}">{{ a.status|title }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

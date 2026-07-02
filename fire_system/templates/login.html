@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Вход - ГДПБЗН{% endblock %}
+{% block content %}
+<div class="login-page">
+    <div class="login-card">
+        <div class="login-header">
+            <img src="{{ url_for('static', filename='img/logo.svg') }}" alt="ГДПБЗН" height="80">
+            <h1>ГДПБЗН - МВР</h1>
+            <p>Информационна система за управление на произшествия</p>
+        </div>
+        <form method="POST" class="login-form">
+            {{ form.hidden_tag() }}
+            <div class="form-group">
+                <label for="username"><i class="fas fa-user"></i> Потребител</label>
+                {{ form.username(class="form-control", placeholder="Въведете потребител") }}
+            </div>
+            <div class="form-group">
+                <label for="password"><i class="fas fa-lock"></i> Парола</label>
+                {{ form.password(class="form-control", placeholder="Въведете парола") }}
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Вход</button>
+        </form>
+        <div class="login-footer">
+            <p>Тестови акаунти: admin/admin123 или operator/operator123</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

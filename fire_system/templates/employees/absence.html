@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Отсъствие - {{ employee.full_name }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-calendar-times"></i> Отсъствие за {{ employee.full_name }}</h1>
+</div>
+<div class="card">
+    <div class="card-body">
+        <form method="POST" class="form">
+            {{ form.hidden_tag() }}
+            <div class="form-row">
+                <div class="form-group col-4">
+                    <label>{{ form.absence_type.label }}</label>
+                    {{ form.absence_type(class="form-control") }}
+                </div>
+                <div class="form-group col-4">
+                    <label>{{ form.start_date.label }}</label>
+                    {{ form.start_date(class="form-control", type="date") }}
+                </div>
+                <div class="form-group col-4">
+                    <label>{{ form.end_date.label }}</label>
+                    {{ form.end_date(class="form-control", type="date") }}
+                </div>
+            </div>
+            <div class="form-group">
+                <label>{{ form.reason.label }}</label>
+                {{ form.reason(class="form-control", rows=3) }}
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Запази</button>
+                <a href="{{ url_for('employee_detail', id=employee.id) }}" class="btn btn-outline">Отказ</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

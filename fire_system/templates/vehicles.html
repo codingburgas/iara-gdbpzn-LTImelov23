@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Автомобили - ГДПБЗН{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-truck"></i> Пожарни автомобили</h1>
+    {% if current_user.role == 'admin' %}
+    <div class="header-actions">
+        <a href="{{ url_for('vehicle_create') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Нов автомобил
+        </a>
+    </div>
+    {% endif %}
+</div>
+<div class="vehicle-grid">
+    {% for v in vehicles %}
+    <div class="vehicle-card">
+        <div class="vehicle-icon">
+            <i class="fas fa-truck"></i>
+        </div>
+        <div class="vehicle-info">
+            <h3>{{ v.registration }}</h3>
+            <p>{{ v.model }}</p>
+            <span class="tag tag-{{ v.type }}">{{ v.type|replace('_', ' ')|title }}</span>
+            <p class="vehicle-gps"><i class="fas fa-satellite"></i> GPS: {{ v.gps_device_id or '—' }}</p>
+            <p class="vehicle-status {% if v.is_active %}active{% endif %}">
+                {{ 'Активен' if v.is_active else 'Неактивен' }}
+            </p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

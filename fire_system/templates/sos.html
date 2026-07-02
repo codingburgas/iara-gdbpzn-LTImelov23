@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}SOS Сигнали - ГДПБЗН{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-bell"></i> SOS Сигнали за помощ</h1>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        {% if signals %}
+        <div class="sos-grid">
+            {% for s in signals %}
+            <div class="sos-card" id="sos-{{ s.id }}">
+                <div class="sos-header">
+                    <span class="sos-icon"><i class="fas fa-exclamation-triangle"></i></span>
+                    <span class="sos-status active">АКТИВЕН</span>
+                </div>
+                <div class="sos-body">
+                    <h3>{{ s.employee.full_name }}</h3>
+                    <p><i class="fas fa-map-marker-alt"></i>
+                        {% if s.latitude and s.longitude %}
+                        {{ "%.4f"|format(s.latitude) }}, {{ "%.4f"|format(s.longitude) }}
+                        {% else %}
+                        Unknown
+                        {% endif %}
+                    </p>
+                    <p><i class="fas fa-clock"></i> {{ s.sent_at.strftime('%H:%M:%S %d.%m.%Y') }}</p>
+                    {% if s.message %}
+                    <p class="sos-message">"{{ s.message }}"</p>
+                    {% endif %}
+                </div>
+                <div class="sos-footer">
+                    <a href="https://www.google.com/maps?q={{ s.latitude }},{{ s.longitude }}" target="_blank" class="btn btn-sm btn-info">
+                        <i class="fas fa-map"></i> Виж на карта
+                    </a>
+                    <button class="btn btn-sm btn-success" onclick="resolveSOS({{ s.id }})">
+                        <i class="fas fa-check"></i> Разреши
+                    </button>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-muted">Няма активни SOS сигнали.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function resolveSOS(id) {
+    fetch(`/api/sos/${id}/resolve`, { method: 'POST' })
+        .then(r => r.json())
+        .then(() => {
+            document.getElementById(`sos-${id}`).style.display = 'none';
+            toast('SOS сигналът е разрешен');
+        });
+}
+
+socket.on('sos_alert', function(data) {
+    toast(`SOS от ${data.employee}!`, 'danger');
+});
+
+socket.on('sos_resolved', function(data) {
+    const el = document.getElementById(`sos-${data.id}`);
+    if (el) el.style.display = 'none';
+});
+</script>
+{% endblock %}

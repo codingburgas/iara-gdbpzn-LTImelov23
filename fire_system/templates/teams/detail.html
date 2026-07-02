@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}{{ team.name }} - ГДПБЗН{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-users"></i> {{ team.name }}</h1>
+    <div class="header-actions">
+        <span class="shift-badge shift-{{ team.shift }}">{{ team.shift|upper }}</span>
+        <a href="{{ url_for('team_list') }}" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Назад</a>
+    </div>
+</div>
+<div class="row">
+    <div class="col-6">
+        <div class="card">
+            <div class="card-header"><h2>Информация</h2></div>
+            <div class="card-body">
+                <div class="info-grid">
+                    <div class="info-item">
+                        <label>Име</label>
+                        <span>{{ team.name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Смяна</label>
+                        <span class="shift-badge shift-{{ team.shift }}">{{ team.shift|title }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Ръководител</label>
+                        <span>{{ team.leader.full_name if team.leader else '—' }}</span>
+                    </div>
+                    <div class="info-item">
+                        <label>Членове</label>
+                        <span>{{ team.member_count }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6">
+        <div class="card">
+            <div class="card-header">
+                <h2>Членове</h2>
+                {% if current_user.role == 'admin' %}
+                <button class="btn btn-sm btn-primary" onclick="showAssignForm()">
+                    <i class="fas fa-plus"></i> Добави
+                </button>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <div class="member-list">
+                    {% for ta in team.assignments %}
+                    {% if ta.is_active %}
+                    <div class="member-item">
+                        <div class="member-avatar">{{ ta.employee.first_name[0] }}{{ ta.employee.last_name[0] }}</div>
+                        <div class="member-info">
+                            <strong>{{ ta.employee.full_name }}</strong>
+                            <small>{{ ta.employee.rank.name if ta.employee.rank else '' }}</small>
+                            {% if ta.vehicle %}
+                            <small>Авто: {{ ta.vehicle.registration }}</small>
+                            {% endif %}
+                        </div>
+                        <span class="member-status {{ ta.employee.current_status }}"></span>
+                        {% if current_user.role == 'admin' %}
+                        <form method="POST" action="{{ url_for('team_unassign', team_id=team.id, assignment_id=ta.id) }}" style="display:inline">
+                            <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-times"></i></button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+
+                <div id="assignForm" style="display:none" class="mt-3">
+                    <form method="POST" action="{{ url_for('team_assign', id=team.id) }}" class="form-row">
+                        <div class="form-group col-5">
+                            <select name="employee_id" class="form-control" required>
+                                <option value="">Избери служител</option>
+                                {% for e in employees if e not in team.assignments|map(attribute='employee') %}
+                                <option value="{{ e.id }}">{{ e.full_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group col-4">
+                            <select name="vehicle_id" class="form-control">
+                                <option value="">Без автомобил</option>
+                                {% for v in vehicles %}
+                                <option value="{{ v.id }}">{{ v.registration }} ({{ v.model }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group col-3">
+                            <button type="submit" class="btn btn-primary btn-block">Добави</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function showAssignForm() {
+    document.getElementById('assignForm').style.display = document.getElementById('assignForm').style.display === 'none' ? 'block' : 'none';
+}
+</script>
+{% endblock %}

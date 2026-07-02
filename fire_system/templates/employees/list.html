@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Служители - ГДПБЗН{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-users"></i> Служители</h1>
+    {% if current_user.role == 'admin' %}
+    <div class="header-actions">
+        <a href="{{ url_for('employee_create') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Нов служител
+        </a>
+    </div>
+    {% endif %}
+</div>
+<div class="card">
+    <div class="card-body">
+        <div class="employee-grid">
+            {% for emp in employees %}
+            <div class="employee-card {% if not emp.is_active %}inactive{% endif %}">
+                <div class="emp-photo">
+                    {% if emp.photo %}
+                    <img src="{{ url_for('static', filename='uploads/' + emp.photo) }}" alt="{{ emp.full_name }}">
+                    {% else %}
+                    <div class="emp-avatar">{{ emp.first_name[0] }}{{ emp.last_name[0] }}</div>
+                    {% endif %}
+                    <span class="emp-status {{ emp.current_status }}"></span>
+                </div>
+                <div class="emp-info">
+                    <h3>{{ emp.full_name }}</h3>
+                    <p class="emp-rank">{{ emp.rank.name if emp.rank else '—' }}</p>
+                    <p class="emp-phone"><i class="fas fa-phone"></i> {{ emp.phone or '—' }}</p>
+                    <div class="emp-meta">
+                        {% for ta in emp.team_assignments %}
+                        {% if ta.is_active %}
+                        <span class="tag tag-info">{{ ta.team.name }}</span>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                    <div class="emp-actions">
+                        <a href="{{ url_for('employee_detail', id=emp.id) }}" class="btn btn-sm btn-primary">
+                            <i class="fas fa-eye"></i>
+                        </a>
+                        {% if current_user.role == 'admin' %}
+                        <a href="{{ url_for('employee_edit', id=emp.id) }}" class="btn btn-sm btn-warning">
+                            <i class="fas fa-edit"></i>
+                        </a>
+                        <a href="{{ url_for('employee_absence', id=emp.id) }}" class="btn btn-sm btn-secondary">
+                            <i class="fas fa-calendar-times"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

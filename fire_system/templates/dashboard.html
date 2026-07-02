@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Табло - ГДПБЗН{% endblock %}
+{% block content %}
+<div class="dashboard">
+    <div class="page-header">
+        <h1><i class="fas fa-fire-extinguisher"></i> Оперативно табло</h1>
+        <div class="header-actions">
+            <a href="{{ url_for('incident_create') }}" class="btn btn-danger">
+                <i class="fas fa-plus"></i> Ново произшествие
+            </a>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon bg-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ active_incidents }}</h3>
+                <p>Активни произшествия</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-success">
+                <i class="fas fa-user-check"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ available_employees }} / {{ total_employees }}</h3>
+                <p>Налични служители</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-info">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ active_teams|length }}</h3>
+                <p>Активни екипа</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-warning">
+                <i class="fas fa-truck"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ total_vehicles }}</h3>
+                <p>Пожарни автомобила</p>
+            </div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-icon bg-secondary">
+                <i class="fas fa-calendar-times"></i>
+            </div>
+            <div class="stat-info">
+                <h3>{{ today_absences_count }}</h3>
+                <p>Отсъстващи днес</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-list"></i> Активни произшествия</h2>
+                </div>
+                <div class="card-body">
+                    {% if active_incidents_list %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Код</th>
+                                    <th>Тип</th>
+                                    <th>Адрес</th>
+                                    <th>Екип</th>
+                                    <th>Статус</th>
+                                    <th>Действия</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for inc in active_incidents_list %}
+                                <tr>
+                                    <td><strong>{{ inc.code }}</strong></td>
+                                    <td><span class="incident-type type-{{ inc.incident_type }}">{{ inc.incident_type|replace('_', ' ')|title }}</span></td>
+                                    <td>{{ inc.address }}, {{ inc.city }}</td>
+                                    <td>{{ inc.team.name if inc.team else 'Not assigned' }}</td>
+                                    <td><span class="status-badge status-{{ inc.status }}">{{ inc.status|title }}</span></td>
+                                    <td>
+                                        <a href="{{ url_for('incident_detail', id=inc.id) }}" class="btn btn-sm btn-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">Няма активни произшествия.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-4">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-chart-pie"></i> Статус на произшествията</h2>
+                </div>
+                <div class="card-body">
+                    <div class="status-chart">
+                        {% for status, count in status_counts.items() %}
+                        {% if count > 0 %}
+                        <div class="chart-item">
+                            <span class="chart-label status-{{ status }}">{{ status|title }}</span>
+                            <div class="chart-bar">
+                                <div class="chart-fill status-{{ status }}" style="width: {{ (count / (active_incidents or 1)) * 100 }}%"></div>
+                            </div>
+                            <span class="chart-value">{{ count }}</span>
+                        </div>
+                        {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-clock"></i> Последни произшествия</h2>
+                </div>
+                <div class="card-body">
+                    <ul class="activity-list">
+                        {% for inc in recent_incidents %}
+                        <li>
+                            <span class="activity-icon type-{{ inc.incident_type }}">
+                                <i class="fas fa-fire"></i>
+                            </span>
+                            <div class="activity-info">
+                                <strong>{{ inc.code }}</strong>
+                                <p>{{ inc.incident_type|replace('_', ' ')|title }}</p>
+                                <small>{{ inc.created_at.strftime('%H:%M %d.%m.%Y') }}</small>
+                            </div>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

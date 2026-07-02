@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - ГДПБЗН{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-plus-circle"></i> {{ title }}</h1>
+</div>
+<div class="card">
+    <div class="card-body">
+        <form method="POST" class="form">
+            {{ form.hidden_tag() }}
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label>{{ form.incident_type.label }}</label>
+                    {{ form.incident_type(class="form-control") }}
+                </div>
+                <div class="form-group col-3">
+                    <label>{{ form.priority.label }}</label>
+                    {{ form.priority(class="form-control") }}
+                </div>
+                <div class="form-group col-3">
+                    <label>{{ form.source.label }}</label>
+                    {{ form.source(class="form-control") }}
+                </div>
+            </div>
+            <div class="form-group">
+                <label>{{ form.address.label }}</label>
+                {{ form.address(class="form-control", placeholder="ул. Пример 123") }}
+            </div>
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label>{{ form.city.label }}</label>
+                    {{ form.city(class="form-control", placeholder="София") }}
+                </div>
+                <div class="form-group col-3">
+                    <label>{{ form.latitude.label }}</label>
+                    {{ form.latitude(class="form-control", placeholder="42.6977") }}
+                </div>
+                <div class="form-group col-3">
+                    <label>{{ form.longitude.label }}</label>
+                    {{ form.longitude(class="form-control", placeholder="23.3219") }}
+                </div>
+            </div>
+            <div class="form-group">
+                <label>{{ form.description.label }}</label>
+                {{ form.description(class="form-control", rows=4, placeholder="Описание на произшествието...") }}
+            </div>
+            <div class="form-group">
+                <label>{{ form.team_id.label }}</label>
+                {{ form.team_id(class="form-control") }}
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Създай</button>
+                <a href="{{ url_for('incident_list') }}" class="btn btn-outline">Отказ</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

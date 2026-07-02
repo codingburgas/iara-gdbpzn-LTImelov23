@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Видео връзка - {{ incident.code }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-video"></i> Видео връзка: {{ incident.code }}</h1>
+    <div class="header-actions">
+        <a href="{{ url_for('incident_detail', id=incident.id) }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Назад
+        </a>
+    </div>
+</div>
+
+<div class="video-container">
+    <div class="video-main">
+        <div class="video-placeholder">
+            <i class="fas fa-video"></i>
+            <h3>Видео връзката е активна</h3>
+            <p>Стая: {{ room }}</p>
+            <p>Споделете този URL с участниците в инцидента за да се присъединят.</p>
+            <div class="video-controls">
+                <button class="btn btn-danger" onclick="endCall()">
+                    <i class="fas fa-phone-slash"></i> Край
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="video-info">
+        <div class="card">
+            <div class="card-header"><h3>Информация</h3></div>
+            <div class="card-body">
+                <p><strong>Произшествие:</strong> {{ incident.code }}</p>
+                <p><strong>Адрес:</strong> {{ incident.address }}</p>
+                <p><strong>Стая:</strong> {{ room }}</p>
+                <p class="text-muted">В реална среда тук ще бъде интегрирана WebRTC видео връзка.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function endCall() {
+    window.location.href = "{{ url_for('incident_detail', id=incident.id) }}";
+}
+</script>
+{% endblock %}

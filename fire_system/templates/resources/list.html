@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Ресурси - {{ incident.code }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-boxes"></i> Ресурси: {{ incident.code }}</h1>
+    <div class="header-actions">
+        <a href="{{ url_for('resource_create', incident_id=incident.id) }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Заяви ресурс
+        </a>
+        <a href="{{ url_for('incident_detail', id=incident.id) }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Назад
+        </a>
+    </div>
+</div>
+<div class="card">
+    <div class="card-body">
+        {% if incident.resources %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Ресурс</th>
+                    <th>Количество</th>
+                    <th>Описание</th>
+                    <th>Статус</th>
+                    <th>Действие</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for res in incident.resources %}
+                <tr>
+                    <td>{{ res.resource_type }}</td>
+                    <td>{{ res.quantity or '—' }}</td>
+                    <td>{{ res.description or '—' }}</td>
+                    <td><span class="status-badge status-{{ res.status }}">{{ res.status|title }}</span></td>
+                    <td>
+                        <form method="POST" action="{{ url_for('resource_update_status', id=res.id) }}" style="display:inline">
+                            <select name="status" onchange="this.form.submit()" class="form-control form-control-sm">
+                                <option value="pending" {% if res.status == 'pending' %}selected{% endif %}>Pending</option>
+                                <option value="approved" {% if res.status == 'approved' %}selected{% endif %}>Approved</option>
+                                <option value="delivered" {% if res.status == 'delivered' %}selected{% endif %}>Delivered</option>
+                                <option value="cancelled" {% if res.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                            </select>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-muted">Няма заявени ресурси.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Чат - {{ incident.code }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-comments"></i> Чат: {{ incident.code }}</h1>
+    <div class="header-actions">
+        <a href="{{ url_for('incident_map', incident_id=incident.id) }}" class="btn btn-info">
+            <i class="fas fa-map"></i> Карта
+        </a>
+        <a href="{{ url_for('video_call', incident_id=incident.id) }}" class="btn btn-primary">
+            <i class="fas fa-video"></i> Видео
+        </a>
+        <a href="{{ url_for('incident_detail', id=incident.id) }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Назад
+        </a>
+    </div>
+</div>
+
+<div class="chat-container">
+    <div class="chat-main">
+        <div class="chat-messages" id="chatMessages">
+            {% for msg in messages %}
+            <div class="chat-message {{ 'chat-message-own' if msg.sender.user_id == current_user.id else '' }}">
+                <div class="msg-sender">{{ msg.sender.full_name }}</div>
+                {% if msg.message_type == 'image' and msg.image_url %}
+                <img src="{{ url_for('static', filename='uploads/' + msg.image_url) }}" class="msg-image" alt="Image">
+                {% endif %}
+                {% if msg.content %}
+                <div class="msg-content">{{ msg.content }}</div>
+                {% endif %}
+                <div class="msg-time">{{ msg.created_at.strftime('%H:%M') }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        <div class="chat-input">
+            <form id="chatForm" method="POST" enctype="multipart/form-data">
+                <div class="chat-input-row">
+                    <button type="button" class="btn btn-sm btn-outline" onclick="toggleTemplates()" title="Шаблони">
+                        <i class="fas fa-list"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline" onclick="document.getElementById('chatImage').click()" title="Снимка">
+                        <i class="fas fa-camera"></i>
+                    </button>
+                    <input type="text" id="chatContent" name="content" class="form-control" placeholder="Напишете съобщение..." autocomplete="off">
+                    <input type="file" id="chatImage" name="image" accept="image/*" style="display:none" onchange="previewImage(this)">
+                    <button type="submit" class="btn btn-primary"><i class="fas fa-paper-plane"></i></button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="chat-sidebar">
+        <div class="card">
+            <div class="card-header"><h3>Шаблони</h3></div>
+            <div class="card-body" id="templateList">
+                {% for t in templates %}
+                <div class="template-item" onclick="useTemplate('{{ t.content|e }}')">
+                    <span class="template-cat">{{ t.category }}</span>
+                    <p>{{ t.content }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const INCIDENT_ID = {{ incident.id }};
+
+document.getElementById('chatForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const content = document.getElementById('chatContent').value.trim();
+    const imageFile = document.getElementById('chatImage').files[0];
+
+    if (!content && !imageFile) return;
+
+    fetch(`/api/incidents/${INCIDENT_ID}/chat/send`, {
+        method: 'POST',
+        body: formData
+    }).then(r => r.json()).then(msg => {
+        document.getElementById('chatContent').value = '';
+        document.getElementById('chatImage').value = '';
+        addMessageToChat(msg);
+    });
+});
+
+function addMessageToChat(msg) {
+    const container = document.getElementById('chatMessages');
+    const div = document.createElement('div');
+    div.className = 'chat-message';
+    let html = `<div class="msg-sender">${msg.sender}</div>`;
+    if (msg.image_url) html += `<img src="${msg.image_url}" class="msg-image">`;
+    if (msg.content) html += `<div class="msg-content">${msg.content}</div>`;
+    html += `<div class="msg-time">${new Date(msg.created_at).toLocaleTimeString('bg-BG', {hour:'2-digit', minute:'2-digit'})}</div>`;
+    div.innerHTML = html;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+}
+
+socket.on('chat_message', function(msg) {
+    addMessageToChat(msg);
+});
+
+function useTemplate(text) {
+    document.getElementById('chatContent').value = text;
+}
+
+function toggleTemplates() {
+    const sidebar = document.querySelector('.chat-sidebar');
+    sidebar.style.display = sidebar.style.display === 'none' ? 'block' : 'none';
+}
+
+function previewImage(input) {
+    if (input.files && input.files[0]) {
+        toast('Снимката е добавена');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    socket.emit('join_incident', { incident_id: INCIDENT_ID });
+    const container = document.getElementById('chatMessages');
+    container.scrollTop = container.scrollHeight;
+});
+</script>
+{% endblock %}

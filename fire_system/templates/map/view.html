@@ -1,0 +1,215 @@
+{% extends "base.html" %}
+{% block title %}Карта - {{ incident.code }}{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-map"></i> Карта: {{ incident.code }}</h1>
+    <div class="header-actions">
+        <button class="btn btn-danger" onclick="sendSOS()"><i class="fas fa-bell"></i> SOS</button>
+        <a href="{{ url_for('chat_view', incident_id=incident.id) }}" class="btn btn-secondary">
+            <i class="fas fa-comments"></i> Чат
+        </a>
+        <a href="{{ url_for('incident_detail', id=incident.id) }}" class="btn btn-outline">
+            <i class="fas fa-arrow-left"></i> Назад
+        </a>
+    </div>
+</div>
+
+<div class="map-container">
+    <div id="incidentMap" class="map-main"></div>
+    <div class="map-sidebar">
+        <div class="card">
+            <div class="card-header"><h3>Информация</h3></div>
+            <div class="card-body">
+                <p><strong>{{ incident.code }}</strong></p>
+                <p>{{ incident.incident_type|replace('_', ' ')|title }}</p>
+                <p>{{ incident.address }}, {{ incident.city }}</p>
+                <p>Статус: <span class="status-badge status-{{ incident.status }}">{{ incident.status|title }}</span></p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h3>Маркери</h3></div>
+            <div class="card-body">
+                <div class="marker-controls">
+                    <button class="btn btn-sm btn-outline marker-btn" data-type="fire_front" onclick="addMarker('fire_front')">
+                        <span class="marker-dot fire-front"></span> Фронт
+                    </button>
+                    <button class="btn btn-sm btn-outline marker-btn" data-type="wind_direction" onclick="addMarker('wind_direction')">
+                        <span class="marker-dot wind"></span> Вятър
+                    </button>
+                    <button class="btn btn-sm btn-outline marker-btn" data-type="water_source" onclick="addMarker('water_source')">
+                        <span class="marker-dot water"></span> Вода
+                    </button>
+                    <button class="btn btn-sm btn-outline marker-btn" data-type="danger_zone" onclick="addMarker('danger_zone')">
+                        <span class="marker-dot danger"></span> Опасност
+                    </button>
+                    <button class="btn btn-sm btn-outline marker-btn" data-type="command_post" onclick="addMarker('command_post')">
+                        <span class="marker-dot command"></span> КП
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><h3>Екипи на терен</h3></div>
+            <div class="card-body" id="teamLocations">
+                <p class="text-muted">Зареждане...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="markerModal" class="modal" style="display:none">
+    <div class="modal-content">
+        <span class="close" onclick="closeMarkerModal()">&times;</span>
+        <h3>Добави маркер</h3>
+        <form id="markerForm">
+            <div class="form-group">
+                <label>Тип</label>
+                <input type="text" id="markerType" class="form-control" readonly>
+            </div>
+            <div class="form-group">
+                <label>Етикет</label>
+                <input type="text" id="markerLabel" class="form-control" placeholder="Описание...">
+            </div>
+            <input type="hidden" id="markerLat">
+            <input type="hidden" id="markerLng">
+            <button type="button" class="btn btn-primary" onclick="saveMarker()">Запази</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const INCIDENT_ID = {{ incident.id }};
+const INCIDENT_LAT = {{ incident.latitude or 42.6977 }};
+const INCIDENT_LNG = {{ incident.longitude or 23.3219 }};
+
+let map;
+let markersLayer;
+let currentMarkerType;
+let markerIcons = {
+    'fire_front': L.divIcon({ className: 'custom-marker fire-front', html: '<i class="fas fa-fire"></i>', iconSize: [30, 30] }),
+    'wind_direction': L.divIcon({ className: 'custom-marker wind', html: '<i class="fas fa-wind"></i>', iconSize: [30, 30] }),
+    'water_source': L.divIcon({ className: 'custom-marker water', html: '<i class="fas fa-tint"></i>', iconSize: [30, 30] }),
+    'danger_zone': L.divIcon({ className: 'custom-marker danger', html: '<i class="fas fa-skull-crossbones"></i>', iconSize: [30, 30] }),
+    'command_post': L.divIcon({ className: 'custom-marker command', html: '<i class="fas fa-flag"></i>', iconSize: [30, 30] }),
+    'sos': L.divIcon({ className: 'custom-marker sos', html: '<i class="fas fa-exclamation"></i>', iconSize: [30, 30] })
+};
+
+function initMap() {
+    map = L.map('incidentMap').setView([INCIDENT_LAT, INCIDENT_LNG], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    markersLayer = L.layerGroup().addTo(map);
+
+    L.marker([INCIDENT_LAT, INCIDENT_LNG], {
+        icon: L.divIcon({ className: 'incident-marker', html: '<i class="fas fa-exclamation-triangle"></i>', iconSize: [40, 40] })
+    }).addTo(map).bindPopup(`<b>{{ incident.code }}</b><br>{{ incident.incident_type|replace('_', ' ')|title }}`);
+
+    loadMarkers();
+    loadTeamLocations();
+
+    map.on('click', function(e) {
+        if (currentMarkerType) {
+            document.getElementById('markerLat').value = e.latlng.lat;
+            document.getElementById('markerLng').value = e.latlng.lng;
+            document.getElementById('markerType').value = currentMarkerType;
+            document.getElementById('markerModal').style.display = 'block';
+            currentMarkerType = null;
+        }
+    });
+
+    socket.emit('join_incident', { incident_id: INCIDENT_ID });
+}
+
+function loadMarkers() {
+    fetch(`/api/incidents/${INCIDENT_ID}/markers`)
+        .then(r => r.json())
+        .then(markers => {
+            markersLayer.clearLayers();
+            markers.forEach(m => addMarkerToMap(m));
+        });
+}
+
+function addMarkerToMap(m) {
+    const icon = markerIcons[m.type] || markerIcons['other'];
+    const marker = L.marker([m.lat, m.lng], { icon }).addTo(markersLayer);
+    const content = `<b>${m.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</b>${m.label ? '<br>' + m.label : ''}`;
+    marker.bindPopup(content);
+}
+
+function addMarker(type) {
+    currentMarkerType = type;
+    document.querySelectorAll('.marker-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    toast(`Кликнете на картата за да поставите маркер: ${type.replace(/_/g, ' ')}`);
+}
+
+function saveMarker() {
+    const data = {
+        marker_type: document.getElementById('markerType').value,
+        label: document.getElementById('markerLabel').value,
+        latitude: parseFloat(document.getElementById('markerLat').value),
+        longitude: parseFloat(document.getElementById('markerLng').value)
+    };
+    fetch(`/api/incidents/${INCIDENT_ID}/markers/create`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    }).then(r => r.json()).then(() => {
+        closeMarkerModal();
+        loadMarkers();
+    });
+}
+
+function closeMarkerModal() {
+    document.getElementById('markerModal').style.display = 'none';
+    document.getElementById('markerLabel').value = '';
+    document.querySelectorAll('.marker-btn').forEach(b => b.classList.remove('active'));
+}
+
+function loadTeamLocations() {
+    fetch(`/api/incidents/${INCIDENT_ID}/team-locations`)
+        .then(r => r.json())
+        .then(locations => {
+            const container = document.getElementById('teamLocations');
+            if (locations.length === 0) {
+                container.innerHTML = '<p class="text-muted">Няма активни екипи</p>';
+                return;
+            }
+            container.innerHTML = locations.map(l => `
+                <div class="team-location-item">
+                    <i class="fas fa-truck"></i>
+                    <span>${l.employee} - ${l.vehicle}</span>
+                </div>
+            `).join('');
+        });
+}
+
+function sendSOS() {
+    if (!navigator.geolocation) {
+        toast('GPS не е наличен', 'danger');
+        return;
+    }
+    navigator.geolocation.getCurrentPosition(pos => {
+        fetch('/api/sos/send', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({
+                incident_id: INCIDENT_ID,
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                message: 'Нуждая се от помощ!'
+            })
+        }).then(r => r.json()).then(() => toast('SOS сигналът е изпратен!', 'danger'));
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initMap);
+</script>
+{% endblock %}

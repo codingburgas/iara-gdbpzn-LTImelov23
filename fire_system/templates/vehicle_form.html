@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - ГДПБЗН{% endblock %}
+{% block content %}
+<div class="page-header">
+    <h1><i class="fas fa-plus-circle"></i> {{ title }}</h1>
+</div>
+<div class="card">
+    <div class="card-body">
+        <form method="POST" class="form">
+            {{ form.hidden_tag() }}
+            <div class="form-row">
+                <div class="form-group col-4">
+                    <label>{{ form.registration.label }}</label>
+                    {{ form.registration(class="form-control", placeholder="CB 0001 PK") }}
+                </div>
+                <div class="form-group col-4">
+                    <label>{{ form.model.label }}</label>
+                    {{ form.model(class="form-control") }}
+                </div>
+                <div class="form-group col-4">
+                    <label>{{ form.type.label }}</label>
+                    {{ form.type(class="form-control") }}
+                </div>
+            </div>
+            <div class="form-group">
+                <label>{{ form.gps_device_id.label }}</label>
+                {{ form.gps_device_id(class="form-control", placeholder="GPS-001") }}
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Запази</button>
+                <a href="{{ url_for('vehicle_list') }}" class="btn btn-outline">Отказ</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
